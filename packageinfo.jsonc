@@ -1,0 +1,53 @@
+{
+	"language": "python3",
+	"name": "jk_etcpasswd",
+	"version": "0.2020.3.25",
+	"meta": {
+		"description": "This python module provides classes that wrap around /etc/passwd, /etc/shadow, /etc/group and /etc/gshadow.",
+		"keywords": [
+			"passwd",
+			"sysadmin",
+		],
+		"license": "Apache 2.0",
+		"development_status": "stable",
+		"authors": [
+			{
+				"name": "Jürgen Knauth",
+				"email": "pubsrc@binary-overflow.de"
+			}
+		],
+		"wiki": {
+			"page": "DevDocs:jk_etcpasswd"
+		}
+	},
+	"repositories": [
+		{
+			"type": "github",
+			"user": "jkpubsrc",
+			"project": "python-module-jk-etcpasswd",
+			"devon_publish": false
+		},
+		{
+			"type": "pypy",
+			"project": "jk_etcpasswd",
+			"devon_publish": false
+		}
+	],
+	"source": {
+		"packages": [
+			"jk_etcpasswd"
+		],
+		"extra_data_files": [
+		],
+		"extra_binary_files": [
+		]
+	},
+	"requirements": {
+		"python_packages": [
+			"jk_typing",
+		],
+		"python_packages_dev": [
+		]
+	}
+}
+
