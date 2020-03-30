@@ -17,7 +17,8 @@ from .GrpRecord import GrpRecord
 
 class GrpFile(object):
 
-	def __init__(self, pwdFile = "/etc/group", shadowFile = "/etc/gshadow", bTest:bool = False, jsonData:dict = None):
+	@jk_typing.checkFunctionSignature()
+	def __init__(self, pwdFile:str = "/etc/group", shadowFile:str = "/etc/gshadow", pwdFileContent:str = None, shadowFileContent:str = None, bTest:bool = False, jsonData:dict = None):
 		self.__records = []					# stores GrpRecord objects
 		self.__recordsByGroupName = {}		# stores str->GrpRecord
 
@@ -27,11 +28,16 @@ class GrpFile(object):
 			self.__pwdFilePath = pwdFile
 			self.__shadowFilePath = shadowFile
 
-			with codecs.open(pwdFile, "r", "utf-8") as f:
-				sPwdFile = f.read()
+			if pwdFileContent is None:
+				with codecs.open(pwdFile, "r", "utf-8") as f:
+					pwdFileContent = f.read()
+
+			if shadowFileContent is None:
+				with codecs.open(shadowFile, "r", "utf-8") as f:
+					shadowFileContent = f.read()
 
 			lineNo = -1
-			for line in sPwdFile.split("\n"):
+			for line in pwdFileContent.split("\n"):
 				lineNo += 1
 				if not line:
 					continue
@@ -45,11 +51,8 @@ class GrpFile(object):
 				self.__records.append(r)
 				self.__recordsByGroupName[r.groupName] = r
 
-			with codecs.open(shadowFile, "r", "utf-8") as f:
-				sShadowFile = f.read()
-
 			lineNo = -1
-			for line in sShadowFile.split("\n"):
+			for line in shadowFileContent.split("\n"):
 				lineNo += 1
 				if not line:
 					continue
@@ -72,8 +75,8 @@ class GrpFile(object):
 				self._compareDataTo(
 					pwdFile = pwdFile,
 					shadowFile = shadowFile,
-					pwdFileContent = sPwdFile,
-					shadowFileContent = sShadowFile,
+					pwdFileContent = pwdFileContent,
+					shadowFileContent = shadowFileContent,
 				)
 
 		else:

@@ -17,7 +17,7 @@ from .PwdRecord import PwdRecord
 class PwdFile(object):
 
 	@jk_typing.checkFunctionSignature()
-	def __init__(self, pwdFile:str = "/etc/passwd", shadowFile:str = "/etc/shadow", bTest:bool = False, jsonData:dict = None):
+	def __init__(self, pwdFile:str = "/etc/passwd", shadowFile:str = "/etc/shadow", pwdFileContent:str = None, shadowFileContent:str = None, bTest:bool = False, jsonData:dict = None):
 		self.__records = []					# stores PwdRecord objects
 		self.__recordsByUserName = {}		# stores str->PwdRecord
 
@@ -27,11 +27,16 @@ class PwdFile(object):
 			self.__pwdFilePath = pwdFile
 			self.__shadowFilePath = shadowFile
 
-			with codecs.open(pwdFile, "r", "utf-8") as f:
-				sPwdFile = f.read()
+			if pwdFileContent is None:
+				with codecs.open(pwdFile, "r", "utf-8") as f:
+					pwdFileContent = f.read()
+
+			if shadowFileContent is None:
+				with codecs.open(shadowFile, "r", "utf-8") as f:
+					shadowFileContent = f.read()
 
 			lineNo = -1
-			for line in sPwdFile.split("\n"):
+			for line in pwdFileContent.split("\n"):
 				lineNo += 1
 				if not line:
 					continue
@@ -44,11 +49,8 @@ class PwdFile(object):
 				self.__records.append(r)
 				self.__recordsByUserName[r.userName] = r
 
-			with codecs.open(shadowFile, "r", "utf-8") as f:
-				sShadowFile = f.read()
-
 			lineNo = -1
-			for line in sShadowFile.split("\n"):
+			for line in shadowFileContent.split("\n"):
 				lineNo += 1
 				if not line:
 					continue
@@ -69,8 +71,8 @@ class PwdFile(object):
 				self._compareDataTo(
 					pwdFile = pwdFile,
 					shadowFile = shadowFile,
-					pwdFileContent = sPwdFile,
-					shadowFileContent = sShadowFile,
+					pwdFileContent = pwdFileContent,
+					shadowFileContent = shadowFileContent,
 				)
 
 		else:
