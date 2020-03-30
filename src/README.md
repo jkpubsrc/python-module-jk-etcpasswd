@@ -4,7 +4,7 @@
 Introduction
 ------------
 
-This python module ...
+This python module provides classes to parse and model data from /etc/passwd, /etc/shadow, /etc/group and /etc/gshadow.
 
 Information about this module can be found here:
 
