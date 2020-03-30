@@ -17,67 +17,100 @@ from .GrpRecord import GrpRecord
 
 class GrpFile(object):
 
-	def __init__(self, pwdFile = "/etc/group", shadowFile = "/etc/gshadow", bTest:bool = False):
-		self.__pwdFile = pwdFile
-		self.__shadowFile = shadowFile
+	def __init__(self, pwdFile = "/etc/group", shadowFile = "/etc/gshadow", bTest:bool = False, jsonData:dict = None):
+		self.__records = []					# stores GrpRecord objects
+		self.__recordsByGroupName = {}		# stores str->GrpRecord
 
-		self.__records = []
-		self.__recordsByGroupName = {}
+		if jsonData is None:
+			# regular instantiation
 
-		with codecs.open(pwdFile, "r", "utf-8") as f:
-			sPwdFile = f.read()
+			self.__pwdFilePath = pwdFile
+			self.__shadowFilePath = shadowFile
 
-		lineNo = -1
-		for line in sPwdFile.split("\n"):
-			lineNo += 1
-			if not line:
-				continue
+			with codecs.open(pwdFile, "r", "utf-8") as f:
+				sPwdFile = f.read()
 
-			line = line.rstrip("\n")
-			items = line.split(":")
-			if (len(items) != 4) or (items[1] != 'x'):
-				raise Exception("Line " + str(lineNo + 1) + ": Invalid file format: " + pwdFile)
-			extraGroups = self.__parseExtraGroups(items[3])
-			r = GrpRecord(items[0], int(items[2]), extraGroups)
-			self.__records.append(r)
-			self.__recordsByGroupName[r.groupName] = r
+			lineNo = -1
+			for line in sPwdFile.split("\n"):
+				lineNo += 1
+				if not line:
+					continue
 
-		with codecs.open(shadowFile, "r", "utf-8") as f:
-			sShadowFile = f.read()
+				line = line.rstrip("\n")
+				items = line.split(":")
+				if (len(items) != 4) or (items[1] != 'x'):
+					raise Exception("Line " + str(lineNo + 1) + ": Invalid file format: " + pwdFile)
+				extraGroups = self.__parseExtraGroups(items[3])
+				r = GrpRecord(items[0], int(items[2]), extraGroups)
+				self.__records.append(r)
+				self.__recordsByGroupName[r.groupName] = r
 
-		lineNo = -1
-		for line in sShadowFile.split("\n"):
-			lineNo += 1
-			if not line:
-				continue
+			with codecs.open(shadowFile, "r", "utf-8") as f:
+				sShadowFile = f.read()
 
-			line = line.rstrip("\n")
-			items = line.split(":")
-			if (len(items) != 4) or (len(items[2]) > 0):
-				raise Exception("Line " + str(lineNo + 1) + ": Invalid file format: " + shadowFile)
-			r = self.__recordsByGroupName.get(items[0])
-			if r is None:
-				raise Exception("Line " + str(lineNo + 1) + ": User \"" + items[0] + "\" not found! Invalid file format: " + shadowFile)
-			r.groupPassword = items[1]
-			extraGroups = self.__parseExtraGroups(items[3])
-			r.extraGroups.union(extraGroups)
+			lineNo = -1
+			for line in sShadowFile.split("\n"):
+				lineNo += 1
+				if not line:
+					continue
 
-		# ----
+				line = line.rstrip("\n")
+				items = line.split(":")
+				if (len(items) != 4) or (len(items[2]) > 0):
+					raise Exception("Line " + str(lineNo + 1) + ": Invalid file format: " + shadowFile)
+				r = self.__recordsByGroupName.get(items[0])
+				if r is None:
+					raise Exception("Line " + str(lineNo + 1) + ": User \"" + items[0] + "\" not found! Invalid file format: " + shadowFile)
+				r.groupPassword = items[1]
+				for extraGroup in self.__parseExtraGroups(items[3]):
+					if extraGroup not in r.extraGroups:
+						r.extraGroups.append(extraGroup)
 
-		if bTest:
-			self._compareDataTo(
-				pwdFile = pwdFile,
-				shadowFile = shadowFile,
-				pwdFileContent = sPwdFile,
-				shadowFileContent = sShadowFile,
-			)
+			# ----
+
+			if bTest:
+				self._compareDataTo(
+					pwdFile = pwdFile,
+					shadowFile = shadowFile,
+					pwdFileContent = sPwdFile,
+					shadowFileContent = sShadowFile,
+				)
+
+		else:
+			# deserialization
+
+			assert jsonData["grpFormat"] == 1
+
+			self.__pwdFilePath = jsonData["grpFilePath"]
+			self.__shadowFilePath = jsonData["grpShadowFilePath"]
+
+			for jRecord in jsonData["grpRecords"]:
+				r = GrpRecord.createFromJSON(jRecord)
+				self.__records.append(r)
+				self.__recordsByGroupName[r.groupName] = r
 	#
 
-	def __parseExtraGroups(self, groupString:typing.Union[str,None]) -> set:
+	def toJSON(self) -> dict:
+		ret = {
+			"grpFormat": 1,
+			"grpFilePath": self.__pwdFilePath,
+			"grpShadowFilePath": self.__shadowFilePath,
+			"grpRecords": [ r.toJSON() for r in self.__records ],
+		}
+		return ret
+	#
+
+	@staticmethod
+	def createFromJSON(j:dict):
+		assert isinstance(j, dict)
+		return GrpFile(jsonData=j)
+	#
+
+	def __parseExtraGroups(self, groupString:typing.Union[str,None]) -> list:
 		if (groupString is None) or (len(groupString.strip()) == 0):
-			return set()
+			return []
 		else:
-			return set(groupString.split(","))
+			return groupString.split(",")
 	#
 
 	#
@@ -88,13 +121,13 @@ class GrpFile(object):
 	def _compareDataTo(self, pwdFile:str = None, shadowFile:str = None, pwdFileContent:str = None, shadowFileContent:str = None):
 		if pwdFileContent is None:
 			if pwdFile is None:
-				pwdFile = self.__pwdFile
+				pwdFile = self.__pwdFilePath
 			with codecs.open(pwdFile, "r", "utf-8") as f:
 				pwdFileContent = f.read()
 
 		if shadowFileContent is None:
 			if shadowFile is None:
-				shadowFile = self.__shadowFile
+				shadowFile = self.__shadowFilePath
 			with codecs.open(shadowFile, "r", "utf-8") as f:
 				shadowFileContent = f.read()
 
@@ -126,14 +159,14 @@ class GrpFile(object):
 	#
 
 	#
-	# Write the stored content to the password files in "/etc".
+	# Write the content to the group files in "/etc".
 	#
 	@jk_typing.checkFunctionSignature()
 	def store(self, pwdFile:str = None, shadowFile:str = None):
 		if pwdFile is None:
-			pwdFile = self.__pwdFile
+			pwdFile = self.__pwdFilePath
 		if shadowFile is None:
-			shadowFile = self.__shadowFile
+			shadowFile = self.__shadowFilePath
 
 		contentPwdFile, contentShadowFile = self.toStrings()
 
@@ -168,7 +201,7 @@ class GrpFile(object):
 		return contentPwdFile, contentShadowFile
 	#
 
-	def get(self, groupNameOrID:typing.Union[str,int]) -> GrpRecord:
+	def get(self, groupNameOrID:typing.Union[str,int]) -> typing.Union[GrpRecord,None]:
 		if isinstance(groupNameOrID, str):
 			return self.__recordsByGroupName.get(groupNameOrID, None)
 		elif isinstance(groupNameOrID, int):
