@@ -1,6 +1,5 @@
 
 
-import collections
 import os
 import sys
 import codecs
@@ -9,34 +8,18 @@ import typing
 import jk_typing
 
 
-from .GrpRecord import GrpRecord
+from .PwdRecord import PwdRecord
 
 
 
 
 
-class GrpFile(object):
-
-	################################################################
-	## Constants
-	################################################################
-
-	################################################################
-	## Constructor
-	################################################################
+class PwdFile(object):
 
 	@jk_typing.checkFunctionSignature()
-	def __init__(self,
-			pwdFile:str = "/etc/group",
-			shadowFile:str = "/etc/gshadow",
-			pwdFileContent:str = None,
-			shadowFileContent:str = None,
-			bTest:bool = False,
-			jsonData:dict = None,
-		):
-
-		self.__records = []					# stores GrpRecord objects
-		self.__recordsByGroupName = {}		# stores str->GrpRecord
+	def __init__(self, pwdFile:str = "/etc/passwd", shadowFile:str = "/etc/shadow", pwdFileContent:str = None, shadowFileContent:str = None, bTest:bool = False, jsonData:dict = None):
+		self.__records = []					# stores PwdRecord objects
+		self.__recordsByUserName = {}		# stores str->PwdRecord
 
 		if jsonData is None:
 			# regular instantiation
@@ -60,12 +43,11 @@ class GrpFile(object):
 
 				line = line.rstrip("\n")
 				items = line.split(":")
-				if (len(items) != 4) or (items[1] != 'x'):
+				if (len(items) != 7) or (items[1] != 'x'):
 					raise Exception("Line " + str(lineNo + 1) + ": Invalid file format: " + pwdFile)
-				extraGroups = self.__parseExtraGroups(items[3])
-				r = GrpRecord(items[0], int(items[2]), extraGroups)
+				r = PwdRecord(items[0], int(items[2]), int(items[3]), items[4], items[5], items[6])
 				self.__records.append(r)
-				self.__recordsByGroupName[r.groupName] = r
+				self.__recordsByUserName[r.userName] = r
 
 			lineNo = -1
 			for line in shadowFileContent.split("\n"):
@@ -75,15 +57,13 @@ class GrpFile(object):
 
 				line = line.rstrip("\n")
 				items = line.split(":")
-				if (len(items) != 4) or (len(items[2]) > 0):
+				if len(items) != 9:
 					raise Exception("Line " + str(lineNo + 1) + ": Invalid file format: " + shadowFile)
-				r = self.__recordsByGroupName.get(items[0])
+				r = self.__recordsByUserName.get(items[0])
 				if r is None:
 					raise Exception("Line " + str(lineNo + 1) + ": User \"" + items[0] + "\" not found! Invalid file format: " + shadowFile)
-				r.groupPassword = items[1]
-				for extraGroup in self.__parseExtraGroups(items[3]):
-					if extraGroup not in r.extraGroups:
-						r.extraGroups.append(extraGroup)
+				r.secretPwdHash = items[1]
+				r.extraShadowData = items[2:]
 
 			# ----
 
@@ -98,42 +78,23 @@ class GrpFile(object):
 		else:
 			# deserialization
 
-			assert jsonData["grpFormat"] == 1
+			assert jsonData["pwdFormat"] == 1
 
-			self.__pwdFilePath = jsonData["grpFilePath"]
-			self.__shadowFilePath = jsonData["grpShadowFilePath"]
+			self.__pwdFilePath = jsonData["pwdFilePath"]
+			self.__shadowFilePath = jsonData["pwdShadowFilePath"]
 
-			for jRecord in jsonData["grpRecords"]:
-				r = GrpRecord.createFromJSON(jRecord)
+			for jRecord in jsonData["pwdRecords"]:
+				r = PwdRecord.createFromJSON(jRecord)
 				self.__records.append(r)
-				self.__recordsByGroupName[r.groupName] = r
+				self.__recordsByUserName[r.userName] = r
 	#
-
-	################################################################
-	## Properties
-	################################################################
-
-	################################################################
-	## Helper Methods
-	################################################################
-
-	def __parseExtraGroups(self, groupString:typing.Union[str,None]) -> list:
-		if (groupString is None) or (len(groupString.strip()) == 0):
-			return []
-		else:
-			return groupString.split(",")
-	#
-
-	################################################################
-	## Public Methods
-	################################################################
 
 	def toJSON(self) -> dict:
 		ret = {
-			"grpFormat": 1,
-			"grpFilePath": self.__pwdFilePath,
-			"grpShadowFilePath": self.__shadowFilePath,
-			"grpRecords": [ r.toJSON() for r in self.__records ],
+			"pwdFormat": 1,
+			"pwdFilePath": self.__pwdFilePath,
+			"pwdShadowFilePath": self.__shadowFilePath,
+			"pwdRecords": [ r.toJSON() for r in self.__records ],
 		}
 		return ret
 	#
@@ -141,15 +102,21 @@ class GrpFile(object):
 	def idToNameMap(self) -> typing.Dict[int,str]:
 		ret = {}
 		for r in self.__records:
-			ret[r.groupID] = r.groupName
+			ret[r.userID] = r.userName
 		return ret
 	#
 
 	def nameToIDMap(self) -> typing.Dict[str,int]:
 		ret = {}
 		for r in self.__records:
-			ret[r.groupName] = r.groupID
+			ret[r.userName] = r.userID
 		return ret
+	#
+
+	@staticmethod
+	def createFromJSON(j:dict):
+		assert isinstance(j, dict)
+		return PwdFile(jsonData=j)
 	#
 
 	#
@@ -198,7 +165,7 @@ class GrpFile(object):
 	#
 
 	#
-	# Write the content to the group files in "/etc".
+	# Write the content to the password files in "/etc".
 	#
 	@jk_typing.checkFunctionSignature()
 	def store(self, pwdFile:str = None, shadowFile:str = None):
@@ -223,8 +190,8 @@ class GrpFile(object):
 		contentShadowFile = ""
 
 		for r in self.__records:
-			contentPwdFile += r.groupName + ":x:" + str(r.groupID) + ":" + ",".join(sorted(r.extraGroups)) + "\n"
-			contentShadowFile += r.groupName + ":" + r.groupPassword + "::" + ",".join(sorted(r.extraGroups)) + "\n"
+			contentPwdFile += r.userName + ":x:" + str(r.userID) + ":" + str(r.groupID) + ":" + r.description + ":" + r.homeDirPath + ":" + r.shellDirPath + "\n"
+			contentShadowFile += r.userName + ":" + r.secretPwdHash + ":" + ":".join(r.extraShadowData) + "\n"
 
 		return contentPwdFile, contentShadowFile
 	#
@@ -234,32 +201,22 @@ class GrpFile(object):
 		contentShadowFile = []
 
 		for r in self.__records:
-			contentPwdFile.append(r.groupName + ":x:" + str(r.groupID) + ":" + ",".join(r.extraGroups))
-			contentShadowFile.append(r.groupName + ":" + r.groupPassword + "::" + ",".join(r.extraGroups))
+			contentPwdFile.append(r.userName + ":x:" + str(r.userID) + ":" + str(r.groupID) + ":" + r.description + ":" + r.homeDirPath + ":" + r.shellDirPath)
+			contentShadowFile.append(r.userName + ":" + r.secretPwdHash + ":" + ":".join(r.extraShadowData))
 
 		return contentPwdFile, contentShadowFile
 	#
 
-	def get(self, groupNameOrID:typing.Union[str,int]) -> typing.Union[GrpRecord,None]:
-		if isinstance(groupNameOrID, str):
-			return self.__recordsByGroupName.get(groupNameOrID, None)
-		elif isinstance(groupNameOrID, int):
+	def get(self, userNameOrID:typing.Union[str,int]) -> typing.Union[PwdRecord,None]:
+		if isinstance(userNameOrID, str):
+			return self.__recordsByUserName.get(userNameOrID, None)
+		elif isinstance(userNameOrID, int):
 			for r in self.__records:
-				if r.groupID == groupNameOrID:
+				if r.userID == userNameOrID:
 					return r
 			return None
 		else:
-			raise Exception("Invalid data specified for argument 'groupNameOrID': " + repr(groupNameOrID))
-	#
-
-	################################################################
-	## Public Static Methods
-	################################################################
-
-	@staticmethod
-	def createFromJSON(j:dict):
-		assert isinstance(j, dict)
-		return GrpFile(jsonData=j)
+			raise Exception("Invalid data specified for argument 'userNameOrID': " + repr(userNameOrID))
 	#
 
 #

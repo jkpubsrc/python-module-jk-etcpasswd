@@ -11,6 +11,21 @@ import typing
 
 class GrpRecord(object):
 
+	__slots__ = (
+		"groupName",
+		"groupID",
+		"extraGroups",
+		"groupPassword",
+	)
+
+	################################################################
+	## Constants
+	################################################################
+
+	################################################################
+	## Constructor
+	################################################################
+
 	def __init__(self, groupName:str, groupID:int, extraGroups:list):
 		assert isinstance(groupName, str)
 		assert isinstance(groupID, int)
@@ -22,6 +37,18 @@ class GrpRecord(object):
 		self.groupPassword = None
 	#
 
+	################################################################
+	## Properties
+	################################################################
+
+	################################################################
+	## Helper Methods
+	################################################################
+
+	################################################################
+	## Public Methods
+	################################################################
+
 	def toJSON(self) -> dict:
 		ret = {
 			"groupName": self.groupName,
@@ -31,6 +58,10 @@ class GrpRecord(object):
 		}
 		return ret
 	#
+
+	################################################################
+	## Public Static Methods
+	################################################################
 
 	@staticmethod
 	def createFromJSON(j:dict):

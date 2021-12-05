@@ -8,7 +8,7 @@ This python module provides classes to parse and model data from /etc/passwd, /e
 
 Information about this module can be found here:
 
-* [github.org](https://github.com/jkpubsrc/....)
+* [github.org](https://github.com/jkpubsrc/python-module-jk-etcpasswd)
 * [pypi.python.org](https://pypi.python.org/pypi/jk_etcpasswd)
 
 Why this module?

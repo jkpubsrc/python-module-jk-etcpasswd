@@ -22,14 +22,6 @@ class PwdRecord(object):
 		"extraShadowData",
 	)
 
-	################################################################
-	## Constants
-	################################################################
-
-	################################################################
-	## Constructor
-	################################################################
-
 	def __init__(self, userName:str, userID:int, groupID:int, description:str, homeDirPath:str, shellDirPath:str):
 		assert isinstance(userName, str)
 		assert isinstance(userID, int)
@@ -48,18 +40,6 @@ class PwdRecord(object):
 		self.extraShadowData = None
 	#
 
-	################################################################
-	## Properties
-	################################################################
-
-	################################################################
-	## Helper Methods
-	################################################################
-
-	################################################################
-	## Public Methods
-	################################################################
-
 	def toJSON(self) -> dict:
 		ret = {
 			"userName": self.userName,
@@ -73,10 +53,6 @@ class PwdRecord(object):
 		}
 		return ret
 	#
-
-	################################################################
-	## Public Static Methods
-	################################################################
 
 	@staticmethod
 	def createFromJSON(j:dict):

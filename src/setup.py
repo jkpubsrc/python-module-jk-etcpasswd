@@ -21,9 +21,9 @@ setup(
 	classifiers = [
 		"Development Status :: 5 - Production/Stable",
 		"License :: OSI Approved :: Apache Software License",
+		"Programming Language :: Python :: 3",
 	],
 	description = "This python module provides classes to parse and model data from /etc/passwd, /etc/shadow, /etc/group and /etc/gshadow.",
-	download_url = "https://github.com/jkpubsrc/python-module-jk-etcpasswd/tarball/0.2020.3.30",
 	include_package_data = False,
 	install_requires = [
 		"jk_typing",
@@ -32,13 +32,12 @@ setup(
 		"passwd",
 		"sysadmin",
 	],
-	license = "Apache 2.0",
+	license = "Apache2",
 	name = "jk_etcpasswd",
 	packages = [
 		"jk_etcpasswd",
 	],
-	url = "https://github.com/jkpubsrc/python-module-jk-etcpasswd",
-	version = "0.2020.3.30",
+	version = "0.2021.12.5",
 	zip_safe = False,
 	long_description = readme(),
 	long_description_content_type="text/markdown",

@@ -16,8 +16,24 @@ from .PwdRecord import PwdRecord
 
 class PwdFile(object):
 
+	################################################################
+	## Constants
+	################################################################
+
+	################################################################
+	## Constructor
+	################################################################
+
 	@jk_typing.checkFunctionSignature()
-	def __init__(self, pwdFile:str = "/etc/passwd", shadowFile:str = "/etc/shadow", pwdFileContent:str = None, shadowFileContent:str = None, bTest:bool = False, jsonData:dict = None):
+	def __init__(self,
+			pwdFile:str = "/etc/passwd",
+			shadowFile:str = "/etc/shadow",
+			pwdFileContent:str = None,
+			shadowFileContent:str = None,
+			bTest:bool = False,
+			jsonData:dict = None,
+		):
+
 		self.__records = []					# stores PwdRecord objects
 		self.__recordsByUserName = {}		# stores str->PwdRecord
 
@@ -89,21 +105,13 @@ class PwdFile(object):
 				self.__recordsByUserName[r.userName] = r
 	#
 
-	def toJSON(self) -> dict:
-		ret = {
-			"pwdFormat": 1,
-			"pwdFilePath": self.__pwdFilePath,
-			"pwdShadowFilePath": self.__shadowFilePath,
-			"pwdRecords": [ r.toJSON() for r in self.__records ],
-		}
-		return ret
-	#
+	################################################################
+	## Properties
+	################################################################
 
-	@staticmethod
-	def createFromJSON(j:dict):
-		assert isinstance(j, dict)
-		return PwdFile(jsonData=j)
-	#
+	################################################################
+	## Helper Methods
+	################################################################
 
 	#
 	# This method verifies that the data stored in this object reproduces the exact content of the password files in "/etc".
@@ -148,6 +156,34 @@ class PwdFile(object):
 				print("--      Line read: " + repr(line))
 				print("-- Line generated: " + repr(contentShadowFile[lineNo]))
 				raise Exception("Line " + str(lineNo + 1) + ": Lines differ in file: " + shadowFile)
+	#
+
+	################################################################
+	## Public Methods
+	################################################################
+
+	def toJSON(self) -> dict:
+		ret = {
+			"pwdFormat": 1,
+			"pwdFilePath": self.__pwdFilePath,
+			"pwdShadowFilePath": self.__shadowFilePath,
+			"pwdRecords": [ r.toJSON() for r in self.__records ],
+		}
+		return ret
+	#
+
+	def idToNameMap(self) -> typing.Dict[int,str]:
+		ret = {}
+		for r in self.__records:
+			ret[r.userID] = r.userName
+		return ret
+	#
+
+	def nameToIDMap(self) -> typing.Dict[str,int]:
+		ret = {}
+		for r in self.__records:
+			ret[r.userName] = r.userID
+		return ret
 	#
 
 	#
@@ -203,6 +239,16 @@ class PwdFile(object):
 			return None
 		else:
 			raise Exception("Invalid data specified for argument 'userNameOrID': " + repr(userNameOrID))
+	#
+
+	################################################################
+	## Public Static Methods
+	################################################################
+
+	@staticmethod
+	def createFromJSON(j:dict):
+		assert isinstance(j, dict)
+		return PwdFile(jsonData=j)
 	#
 
 #
