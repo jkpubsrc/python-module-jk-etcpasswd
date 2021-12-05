@@ -17,8 +17,24 @@ from .GrpRecord import GrpRecord
 
 class GrpFile(object):
 
+	################################################################
+	## Constants
+	################################################################
+
+	################################################################
+	## Constructor
+	################################################################
+
 	@jk_typing.checkFunctionSignature()
-	def __init__(self, pwdFile:str = "/etc/group", shadowFile:str = "/etc/gshadow", pwdFileContent:str = None, shadowFileContent:str = None, bTest:bool = False, jsonData:dict = None):
+	def __init__(self,
+			pwdFile:str = "/etc/group",
+			shadowFile:str = "/etc/gshadow",
+			pwdFileContent:str = None,
+			shadowFileContent:str = None,
+			bTest:bool = False,
+			jsonData:dict = None,
+		):
+
 		self.__records = []					# stores GrpRecord objects
 		self.__recordsByGroupName = {}		# stores str->GrpRecord
 
@@ -93,6 +109,25 @@ class GrpFile(object):
 				self.__recordsByGroupName[r.groupName] = r
 	#
 
+	################################################################
+	## Properties
+	################################################################
+
+	################################################################
+	## Helper Methods
+	################################################################
+
+	def __parseExtraGroups(self, groupString:typing.Union[str,None]) -> list:
+		if (groupString is None) or (len(groupString.strip()) == 0):
+			return []
+		else:
+			return groupString.split(",")
+	#
+
+	################################################################
+	## Public Methods
+	################################################################
+
 	def toJSON(self) -> dict:
 		ret = {
 			"grpFormat": 1,
@@ -115,19 +150,6 @@ class GrpFile(object):
 		for r in self.__records:
 			ret[r.groupName] = r.groupID
 		return ret
-	#
-
-	@staticmethod
-	def createFromJSON(j:dict):
-		assert isinstance(j, dict)
-		return GrpFile(jsonData=j)
-	#
-
-	def __parseExtraGroups(self, groupString:typing.Union[str,None]) -> list:
-		if (groupString is None) or (len(groupString.strip()) == 0):
-			return []
-		else:
-			return groupString.split(",")
 	#
 
 	#
@@ -228,6 +250,16 @@ class GrpFile(object):
 			return None
 		else:
 			raise Exception("Invalid data specified for argument 'groupNameOrID': " + repr(groupNameOrID))
+	#
+
+	################################################################
+	## Public Static Methods
+	################################################################
+
+	@staticmethod
+	def createFromJSON(j:dict):
+		assert isinstance(j, dict)
+		return GrpFile(jsonData=j)
 	#
 
 #
