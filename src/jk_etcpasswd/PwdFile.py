@@ -1,12 +1,11 @@
 
 
 import os
-import sys
 import codecs
 import typing
 
 import jk_typing
-
+import jk_prettyprintobj
 
 from .PwdRecord import PwdRecord
 
@@ -14,7 +13,7 @@ from .PwdRecord import PwdRecord
 
 
 
-class PwdFile(object):
+class PwdFile(jk_prettyprintobj.DumpMixin):
 
 	################################################################
 	## Constants
@@ -27,15 +26,15 @@ class PwdFile(object):
 	@jk_typing.checkFunctionSignature()
 	def __init__(self,
 			pwdFile:str = "/etc/passwd",
-			shadowFile:str = "/etc/shadow",
-			pwdFileContent:str = None,
-			shadowFileContent:str = None,
+			shadowFile:typing.Union[str,None] = "/etc/shadow",
+			pwdFileContent:typing.Union[str,None] = None,
+			shadowFileContent:typing.Union[str,None] = None,
 			bTest:bool = False,
-			jsonData:dict = None,
+			jsonData:typing.Union[dict,None] = None,
 		):
 
-		self.__records = []					# stores PwdRecord objects
-		self.__recordsByUserName = {}		# stores str->PwdRecord
+		self.__records:typing.List[PwdRecord] = []
+		self.__recordsByUserName:typing.Dict[str,PwdRecord] = {}
 
 		if jsonData is None:
 			# regular instantiation
@@ -48,8 +47,9 @@ class PwdFile(object):
 					pwdFileContent = f.read()
 
 			if shadowFileContent is None:
-				with codecs.open(shadowFile, "r", "utf-8") as f:
-					shadowFileContent = f.read()
+				if shadowFile:
+					with codecs.open(shadowFile, "r", "utf-8") as f:
+						shadowFileContent = f.read()
 
 			lineNo = -1
 			for line in pwdFileContent.split("\n"):
@@ -65,21 +65,22 @@ class PwdFile(object):
 				self.__records.append(r)
 				self.__recordsByUserName[r.userName] = r
 
-			lineNo = -1
-			for line in shadowFileContent.split("\n"):
-				lineNo += 1
-				if not line:
-					continue
+			if shadowFileContent:
+				lineNo = -1
+				for line in shadowFileContent.split("\n"):
+					lineNo += 1
+					if not line:
+						continue
 
-				line = line.rstrip("\n")
-				items = line.split(":")
-				if len(items) != 9:
-					raise Exception("Line " + str(lineNo + 1) + ": Invalid file format: " + shadowFile)
-				r = self.__recordsByUserName.get(items[0])
-				if r is None:
-					raise Exception("Line " + str(lineNo + 1) + ": User \"" + items[0] + "\" not found! Invalid file format: " + shadowFile)
-				r.secretPwdHash = items[1]
-				r.extraShadowData = items[2:]
+					line = line.rstrip("\n")
+					items = line.split(":")
+					if len(items) != 9:
+						raise Exception("Line " + str(lineNo + 1) + ": Invalid file format: " + shadowFile)
+					r = self.__recordsByUserName.get(items[0])
+					if r is None:
+						raise Exception("Line " + str(lineNo + 1) + ": User \"" + items[0] + "\" not found! Invalid file format: " + shadowFile)
+					r.secretPwdHash = items[1]
+					r.extraShadowData = items[2:]
 
 			# ----
 
@@ -109,9 +110,18 @@ class PwdFile(object):
 	## Properties
 	################################################################
 
+	@property
+	def records(self) -> typing.List[dict]:
+		return [ x.toJSON() for x in self.__records ]
+	#
+
 	################################################################
 	## Helper Methods
 	################################################################
+
+	def _dump(self, ctx:jk_prettyprintobj.DumpCtx):
+		ctx.dumpVar("__records", self.__records)
+	#
 
 	#
 	# This method verifies that the data stored in this object reproduces the exact content of the password files in "/etc".

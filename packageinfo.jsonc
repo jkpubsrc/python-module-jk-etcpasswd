@@ -38,7 +38,8 @@
 	],
 	"requirements": {
 		"python_packages": [
-			"jk_typing"
+			"jk_typing >= 0.2025.2.1",
+			"jk_prettyprintobj >= 0.2025.2.1",
 		],
 		"python_packages_dev": [],
 		"system_apt_packages": []

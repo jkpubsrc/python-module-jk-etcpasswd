@@ -1,15 +1,12 @@
 
 
-import os
-import sys
-import codecs
 import typing
 
-#import jk_typing
+import jk_prettyprintobj
 
 
 
-class PwdRecord(object):
+class PwdRecord(jk_prettyprintobj.DumpMixin):
 
 	__slots__ = (
 		"userName",
@@ -44,8 +41,8 @@ class PwdRecord(object):
 		self.description = description
 		self.homeDirPath = homeDirPath
 		self.shellDirPath = shellDirPath
-		self.secretPwdHash = None
-		self.extraShadowData = None
+		self.secretPwdHash:typing.Union[str,None] = None
+		self.extraShadowData:typing.Union[str,None] = None
 	#
 
 	################################################################
@@ -55,6 +52,19 @@ class PwdRecord(object):
 	################################################################
 	## Helper Methods
 	################################################################
+
+	def _dumpVarNames(self) -> typing.List[str]:
+		return [
+			"userName",
+			"userID",
+			"groupID",
+			"description",
+			"homeDirPath",
+			"shellDirPath",
+			"secretPwdHash",
+			"extraShadowData",
+		]
+	#
 
 	################################################################
 	## Public Methods

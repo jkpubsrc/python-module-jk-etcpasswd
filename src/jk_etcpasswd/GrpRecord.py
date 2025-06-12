@@ -1,15 +1,12 @@
 
 
-import os
-import sys
-import codecs
 import typing
 
-#import jk_typing
+import jk_prettyprintobj
 
 
 
-class GrpRecord(object):
+class GrpRecord(jk_prettyprintobj.DumpMixin):
 
 	__slots__ = (
 		"groupName",
@@ -26,7 +23,7 @@ class GrpRecord(object):
 	## Constructor
 	################################################################
 
-	def __init__(self, groupName:str, groupID:int, extraGroups:list):
+	def __init__(self, groupName:str, groupID:int, extraGroups:typing.List[str]):
 		assert isinstance(groupName, str)
 		assert isinstance(groupID, int)
 		assert isinstance(extraGroups, list)
@@ -34,7 +31,7 @@ class GrpRecord(object):
 		self.groupName = groupName
 		self.groupID = groupID
 		self.extraGroups = extraGroups
-		self.groupPassword = None
+		self.groupPassword:typing.Union[str,None] = None
 	#
 
 	################################################################
@@ -44,6 +41,15 @@ class GrpRecord(object):
 	################################################################
 	## Helper Methods
 	################################################################
+
+	def _dumpVarNames(self) -> typing.List[str]:
+		return [
+			"groupName",
+			"groupID",
+			"extraGroups",
+			"groupPassword",
+		]
+	#
 
 	################################################################
 	## Public Methods

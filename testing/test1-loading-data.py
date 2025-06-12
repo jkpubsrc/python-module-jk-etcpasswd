@@ -2,13 +2,9 @@
 
 
 
-
-
-
-
+import jk_logging
 
 import jk_etcpasswd
-
 
 
 
@@ -22,8 +18,19 @@ import jk_etcpasswd
 # sophisticated test logic has been implemented.
 #
 
-pwdFile = jk_etcpasswd.PwdFile(bTest = True)
-grpFile = jk_etcpasswd.GrpFile(bTest = True)
+with jk_logging.wrapMain() as log:
+
+	pwdFile = jk_etcpasswd.PwdFile(shadowFile = None)
+	pwdFile.dump()
+	grpFile = jk_etcpasswd.GrpFile(shadowFile = None)
+	grpFile.dump()
+
+	# ----
+
+	# bTest = True
+
+	# pwdFile = jk_etcpasswd.PwdFile(shadowFile = None, bTest = bTest)
+	# grpFile = jk_etcpasswd.GrpFile(shadowFile = None, bTest = bTest)
 
 
 

@@ -26,6 +26,7 @@ classifiers = [
 ]
 dependencies = [
 	"jk_typing >= 0.2025.2.1",
+	"jk_prettyprintobj >= 0.2025.2.1",
 ]
 
 #[project.urls]

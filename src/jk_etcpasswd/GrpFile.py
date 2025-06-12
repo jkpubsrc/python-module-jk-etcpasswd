@@ -1,13 +1,11 @@
 
 
-import collections
 import os
-import sys
 import codecs
 import typing
 
 import jk_typing
-
+import jk_prettyprintobj
 
 from .GrpRecord import GrpRecord
 
@@ -15,7 +13,7 @@ from .GrpRecord import GrpRecord
 
 
 
-class GrpFile(object):
+class GrpFile(jk_prettyprintobj.DumpMixin):
 
 	################################################################
 	## Constants
@@ -28,15 +26,15 @@ class GrpFile(object):
 	@jk_typing.checkFunctionSignature()
 	def __init__(self,
 			pwdFile:str = "/etc/group",
-			shadowFile:str = "/etc/gshadow",
-			pwdFileContent:str = None,
-			shadowFileContent:str = None,
+			shadowFile:typing.Union[str,None] = "/etc/gshadow",
+			pwdFileContent:typing.Union[str,None] = None,
+			shadowFileContent:typing.Union[str,None] = None,
 			bTest:bool = False,
-			jsonData:dict = None,
+			jsonData:typing.Union[dict,None] = None,
 		):
 
-		self.__records = []					# stores GrpRecord objects
-		self.__recordsByGroupName = {}		# stores str->GrpRecord
+		self.__records:typing.List[GrpRecord] = []
+		self.__recordsByGroupName:typing.Dict[str,GrpRecord] = {}
 
 		if jsonData is None:
 			# regular instantiation
@@ -49,8 +47,9 @@ class GrpFile(object):
 					pwdFileContent = f.read()
 
 			if shadowFileContent is None:
-				with codecs.open(shadowFile, "r", "utf-8") as f:
-					shadowFileContent = f.read()
+				if shadowFile:
+					with codecs.open(shadowFile, "r", "utf-8") as f:
+						shadowFileContent = f.read()
 
 			lineNo = -1
 			for line in pwdFileContent.split("\n"):
@@ -67,23 +66,24 @@ class GrpFile(object):
 				self.__records.append(r)
 				self.__recordsByGroupName[r.groupName] = r
 
-			lineNo = -1
-			for line in shadowFileContent.split("\n"):
-				lineNo += 1
-				if not line:
-					continue
+			if shadowFileContent:
+				lineNo = -1
+				for line in shadowFileContent.split("\n"):
+					lineNo += 1
+					if not line:
+						continue
 
-				line = line.rstrip("\n")
-				items = line.split(":")
-				if (len(items) != 4) or (len(items[2]) > 0):
-					raise Exception("Line " + str(lineNo + 1) + ": Invalid file format: " + shadowFile)
-				r = self.__recordsByGroupName.get(items[0])
-				if r is None:
-					raise Exception("Line " + str(lineNo + 1) + ": User \"" + items[0] + "\" not found! Invalid file format: " + shadowFile)
-				r.groupPassword = items[1]
-				for extraGroup in self.__parseExtraGroups(items[3]):
-					if extraGroup not in r.extraGroups:
-						r.extraGroups.append(extraGroup)
+					line = line.rstrip("\n")
+					items = line.split(":")
+					if (len(items) != 4) or (len(items[2]) > 0):
+						raise Exception("Line " + str(lineNo + 1) + ": Invalid file format: " + shadowFile)
+					r = self.__recordsByGroupName.get(items[0])
+					if r is None:
+						raise Exception("Line " + str(lineNo + 1) + ": User \"" + items[0] + "\" not found! Invalid file format: " + shadowFile)
+					r.groupPassword = items[1]
+					for extraGroup in self.__parseExtraGroups(items[3]):
+						if extraGroup not in r.extraGroups:
+							r.extraGroups.append(extraGroup)
 
 			# ----
 
@@ -113,11 +113,20 @@ class GrpFile(object):
 	## Properties
 	################################################################
 
+	@property
+	def records(self) -> typing.List[dict]:
+		return [ x.toJSON() for x in self.__records ]
+	#
+
 	################################################################
 	## Helper Methods
 	################################################################
 
-	def __parseExtraGroups(self, groupString:typing.Union[str,None]) -> list:
+	def _dump(self, ctx:jk_prettyprintobj.DumpCtx):
+		ctx.dumpVar("__records", self.__records)
+	#
+
+	def __parseExtraGroups(self, groupString:typing.Union[str,None]) -> typing.List[str]:
 		if (groupString is None) or (len(groupString.strip()) == 0):
 			return []
 		else:

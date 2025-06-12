@@ -2,14 +2,10 @@
 
 
 
-
-
-
-
+import jk_logging
+import jk_json
 
 import jk_etcpasswd
-
-import jk_json
 
 
 
@@ -23,17 +19,19 @@ import jk_json
 # sophisticated test logic has been implemented.
 #
 
-bTest = False
+with jk_logging.wrapMain() as log:
 
-pwdFile = jk_etcpasswd.PwdFile(bTest = bTest)
-jk_json.prettyPrint(pwdFile.toJSON())
+	bTest = False
 
-print()
-print()
-print()
+	pwdFile = jk_etcpasswd.PwdFile(bTest = bTest)
+	jk_json.prettyPrint(pwdFile.toJSON())
 
-grpFile = jk_etcpasswd.GrpFile(bTest = bTest)
-jk_json.prettyPrint(grpFile.toJSON())
+	print()
+	print()
+	print()
+
+	grpFile = jk_etcpasswd.GrpFile(bTest = bTest)
+	jk_json.prettyPrint(grpFile.toJSON())
 
 
 

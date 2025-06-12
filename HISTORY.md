@@ -4,4 +4,7 @@
 
 * 2025-06-12:
 	* Migrated to pyproject.toml
+	* Improved: Type hints
+	* Improved: Prettyprinting
+	* Improved: Support for not loading shadow files
 
