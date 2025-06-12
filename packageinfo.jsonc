@@ -21,7 +21,7 @@
 		"license": "Apache2",
 		"name": "jk_etcpasswd",
 		"packageClass": "python-module",
-		"version": "0.2021.12.5"
+		"version": "0.2025.6.12"
 	},
 	"repositories": [
 		{
